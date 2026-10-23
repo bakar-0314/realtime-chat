@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#4F46E5">
+  <title>My Chat</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%234F46E5'/%3E%3Cpath fill='white' d='M32 15c-9.400 0-17 6.600-17 14.800 0 4.400 2.200 8.300 5.700 11L19 49l8.500-4.200c1.400.2 3 .4 4.500.4 9.400 0 17-6.600 17-14.800S41.400 15 32 15z'/%3E%3Cpath fill='%234F46E5' d='M26 31l12-5-4.500 13-2.500-5.500z'/%3E%3C/svg%3E">
+  <style>
+    :root { --bg:#f4f5fa; --panel:#fff; --line:#e6e8f0; --text:#161a2b; --muted:#7a8099; --accent:#4f46e5; --in:#eceef6; --on:#22c55e; --hover:#f3f4fb; --sel:#ebeaff; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#0d0f1a; --panel:#151827; --line:#242840; --text:#eceefb; --muted:#8b91ad; --accent:#6d66ff; --in:#232740; --hover:#1b1f33; --sel:#25285a; } }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: Inter, "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; background:var(--bg); color:var(--text); }
+    button { font: inherit; cursor: pointer; border: 0; }
+    input { font: inherit; color: var(--text); }
+    .ic { width: 22px; height: 22px; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .icon-btn { background: transparent; color: var(--muted); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+    .icon-btn:hover { background: var(--hover); color: var(--text); }
+    .primary { background: var(--accent); color: #fff; border-radius: 12px; padding: 12px 16px; font-weight: 600; }
+    .primary:hover { filter: brightness(1.08); }
+
+    #auth { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 32px 28px; width: 100%; max-width: 380px; }
+    .logo { width: 56px; height: 56px; display: block; margin: 0 auto 14px; }
+    .card h1 { font-size: 22px; text-align: center; margin: 0 0 4px; }
+    .card p.sub { text-align: center; color: var(--muted); margin: 0 0 22px; font-size: 14px; }
+    .tabs { display: flex; background: var(--bg); border-radius: 12px; padding: 4px; margin-bottom: 16px; }
+    .tabs button { flex: 1; padding: 9px; border-radius: 9px; background: transparent; color: var(--muted); font-weight: 600; }
+    .tabs button.on { background: var(--panel); color: var(--text); }
+    .field { width: 100%; padding: 13px 14px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+    .field:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    #authBtn { width: 100%; margin-top: 4px; }
+    #status { color: #e5484d; font-size: 14px; min-height: 20px; margin: 12px 0 0; text-align: center; }
+
+    #chat { display: none; height: 100vh; height: 100dvh; }
+    #sidebar { width: 340px; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; flex-shrink: 0; }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 14px 16px 8px; font-weight: 700; font-size: 18px; }
+    .brand .logo { width: 34px; height: 34px; margin: 0; }
+    .brand span { flex: 1; }
+    .me { display: flex; align-items: center; gap: 10px; padding: 8px 16px 12px; color: var(--muted); font-size: 14px; border-bottom: 1px solid var(--line); }
+    .me b { color: var(--text); flex: 1; }
+    #sideList { overflow-y: auto; flex: 1; padding: 6px 8px; }
+    .sec { display: flex; align-items: center; justify-content: space-between; padding: 12px 8px 4px; color: var(--muted); font-size: 13px; font-weight: 600; }
+    .sec .icon-btn { width: 30px; height: 30px; }
+    .sec .ic { width: 18px; height: 18px; }
+    .row { display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-radius: 12px; cursor: pointer; }
+    .row:hover { background: var(--hover); }
+    .row.active { background: var(--sel); }
+    .row .name { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .empty { padding: 8px; color: var(--muted); font-size: 13px; }
+    .av { position: relative; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; flex-shrink: 0; }
+    .av.sm { width: 36px; height: 36px; font-size: 14px; }
+    .av.on::after { content: ""; position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; background: var(--on); border: 2px solid var(--panel); }
+    .badge { background: var(--accent); color: #fff; border-radius: 11px; min-width: 22px; padding: 2px 7px; font-size: 12px; font-weight: 700; text-align: center; }
+
+    #main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+    #head { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); min-height: 64px; }
+    #back { display: none; }
+    #hTitle { font-weight: 700; }
+    #hSub { color: var(--muted); font-size: 13px; }
+    #messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+    .hint { margin: auto; color: var(--muted); text-align: center; }
+    .msg { max-width: min(75%, 520px); width: fit-content; padding: 8px 12px 6px; border-radius: 18px 18px 18px 4px; background: var(--in); word-wrap: break-word; overflow-wrap: anywhere; }
+    .msg.me { background: var(--accent); color: #fff; margin-left: auto; border-radius: 18px 18px 4px 18px; }
+    .sender { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+    .msg img, .msg video { display: block; max-width: 100%; width: 280px; max-height: 300px; object-fit: cover; border-radius: 12px; margin-bottom: 4px; background: #000; }
+    .msg img { cursor: pointer; }
+    .msg a.file { display: block; color: inherit; font-weight: 600; margin-bottom: 4px; word-break: break-all; }
+    .meta { font-size: 11px; opacity: .7; text-align: right; margin-top: 2px; }
+    .ticks.read { color: #8ee0ff; opacity: 1; }
+    #composer { display: flex; align-items: center; gap: 8px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--panel); border-top: 1px solid var(--line); }
+    #text { flex: 1; padding: 12px 16px; border: 1px solid var(--line); border-radius: 24px; background: var(--bg); min-width: 0; }
+    #text:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    #sendBtn { background: var(--accent); color: #fff; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+
+    #modal { display: none; position: fixed; inset: 0; background: rgba(8,10,25,.55); align-items: center; justify-content: center; z-index: 10; padding: 16px; }
+    .sheet { background: var(--panel); border-radius: 20px; padding: 20px; width: 100%; max-width: 360px; max-height: 85vh; overflow-y: auto; }
+    .sheet h2 { margin: 0 0 12px; font-size: 18px; }
+    #memberList label { display: flex; align-items: center; gap: 12px; padding: 8px 4px; cursor: pointer; }
+    #memberList input { width: 18px; height: 18px; accent-color: var(--accent); }
+    .actions { display: flex; gap: 8px; margin-top: 14px; }
+    .actions button { flex: 1; }
+    .ghost { background: var(--bg); color: var(--text); border-radius: 12px; padding: 12px 16px; font-weight: 600; }
+
+    @media (max-width: 720px) {
+      #sidebar { width: 100%; border-right: 0; }
+      #main { display: none; }
+      #chat.open #sidebar { display: none; }
+      #chat.open #main { display: flex; }
+      #back { display: grid; }
+      .msg { max-width: 85%; }
+    }
+    @media (prefers-reduced-motion: no-preference) { .primary, .row, .icon-btn { transition: background .15s, filter .15s; } }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="logo" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#4f46e5"/><path fill="#fff" d="M32 15c-9.400 0-17 6.600-17 14.800 0 4.400 2.200 8.300 5.700 11L19 49l8.500-4.200c1.400.2 3 .4 4.500.4 9.400 0 17-6.600 17-14.800S41.400 15 32 15z"/><path fill="#4f46e5" d="M26 31l12-5-4.500 13-2.500-5.500z"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path fill="currentColor" d="M3.400 20.400 21 12 3.400 3.600 3.300 10l12 2-12 2z"/></symbol>
+    <symbol id="i-clip" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round" d="M16.500 6.500v9a4.500 4.500 0 0 1-9 0v-10a3 3 0 0 1 6 0v9a1.500 1.500 0 0 1-3 0V7"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m15 5-7 7 7 7"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round" d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/></symbol>
+  </svg>
+
+  <div id="auth">
+    <div class="card">
+      <svg class="logo"><use href="#logo"/></svg>
+      <h1>Welcome to My Chat</h1>
+      <p class="sub">Fast, private messaging for you and your friends.</p>
+      <div class="tabs">
+        <button id="tabLogin" class="on" onclick="setMode('login')">Log in</button>
+        <button id="tabReg" onclick="setMode('register')">Sign up</button>
+      </div>
+      <input class="field" id="username" placeholder="Username" autocomplete="username">
+      <input class="field" id="password" type="password" placeholder="Password" autocomplete="current-password">
+      <button class="primary" id="authBtn" onclick="auth(mode)">Log in</button>
+      <p id="status"></p>
+    </div>
+  </div>
+
+  <div id="chat">
+    <div id="sidebar">
+      <div class="brand"><svg class="logo"><use href="#logo"/></svg><span>My Chat</span></div>
+      <div class="me"><span>Signed in as <b id="me"></b></span><button class="icon-btn" onclick="logout()" title="Log out" aria-label="Log out"><svg class="ic"><use href="#i-out"/></svg></button></div>
+      <div id="sideList">
+        <div class="sec"><span>Groups</span><button class="icon-btn" onclick="openModal()" title="New group" aria-label="New group"><svg class="ic"><use href="#i-plus"/></svg></button></div>
+        <div id="groups"></div>
+        <div class="sec"><span>Contacts</span></div>
+        <div id="users"></div>
+      </div>
+    </div>
+    <div id="main">
+      <div id="head">
+        <button id="back" class="icon-btn" onclick="goBack()" aria-label="Back"><svg class="ic"><use href="#i-back"/></svg></button>
+        <div id="hAv"></div>
+        <div><div id="hTitle">Select a chat</div><div id="hSub"></div></div>
+      </div>
+      <div id="messages"><div class="hint">Pick a contact or group to start chatting</div></div>
+      <div id="composer">
+        <button class="icon-btn" onclick="document.getElementById('file').click()" title="Attach a file" aria-label="Attach a file"><svg class="ic"><use href="#i-clip"/></svg></button>
+        <input type="file" id="file" style="display:none">
+        <input id="text" placeholder="Write a message" maxlength="4000" autocomplete="off">
+        <button id="sendBtn" onclick="sendMessage()" aria-label="Send"><svg class="ic"><use href="#i-send"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal">
+    <div class="sheet">
+      <h2>New group</h2>
+      <input class="field" id="groupName" placeholder="Group name" maxlength="50">
+      <div id="memberList"></div>
+      <div class="actions">
+        <button class="ghost" onclick="closeModal()">Cancel</button>
+        <button class="primary" onclick="createGroup()">Create group</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = "http://localhost:3000";
+    let ws, myName, authToken, mode = "login";
+    let current = null;       // username of the open private chat
+    let currentGroup = null;  // id of the open group chat
+    let users = [];
+    let groups = [];
+    let allMessages = [];     // private messages
+    let groupMessages = [];   // group messages
+    const unread = {};
+    const unreadGroup = {};
+    const typing = {};
+    const typingTimers = {};
+    const groupTyping = {};
+    const groupTypingTimers = {};
+    let lastTypingSent = 0;
+    const $ = (id) => document.getElementById(id);
+
+    function hue(name) {
+      let h = 0;
+      for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 360;
+      return h;
+    }
+
+    function avatar(name, small, isOnline) {
+      const d = document.createElement("span");
+      d.className = "av" + (small ? " sm" : "") + (isOnline ? " on" : "");
+      d.textContent = name.slice(0, 1).toUpperCase();
+      d.style.background = "hsl(" + hue(name) + " 52% 46%)";
+      return d;
+    }
+
+    function setMode(m) {
+      mode = m;
+      $("tabLogin").className = m === "login" ? "on" : "";
+      $("tabReg").className = m === "register" ? "on" : "";
+      $("authBtn").textContent = m === "login" ? "Log in" : "Create account";
+      $("password").placeholder = m === "login" ? "Password" : "Password (8+ characters)";
+      $("status").textContent = "";
+    }
+
+    async function auth(kind) {
+      const body = JSON.stringify({
+        username: $("username").value.trim(),
+        password: $("password").value
+      });
+      try {
+        const res = await fetch(API + "/" + kind, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body
+        });
+        const data = await res.json();
+        if (!res.ok) { $("status").textContent = data.error; return; }
+        if (kind === "register") { setMode("login"); $("status").style.color = "var(--on)"; $("status").textContent = "Account created. Now log in."; return; }
+        myName = data.username;
+        sessionStorage.setItem("token", data.token);
+        sessionStorage.setItem("username", data.username);
+        connect(data.token);
+      } catch {
+        $("status").textContent = "Cannot reach the API. Is node api.js running?";
+      }
+    }
+
+    function connect(token) {
+      authToken = token;
+      ws = new WebSocket("ws://localhost:8080?token=" + token);
+      ws.onopen = () => {
+        $("auth").style.display = "none";
+        $("chat").style.display = "flex";
+        $("me").textContent = myName;
+        setInterval(() => {
+          if (ws.readyState === 1) ws.send(JSON.stringify({ type: "users" }));
+        }, 5000);
+      };
+      ws.onmessage = (e) => {
+        const d = JSON.parse(e.data);
+        if (d.type === "users") { users = d.users; renderUsers(); updateHeader(); }
+        else if (d.type === "presence") { updatePresence(d); }
+        else if (d.type === "history") {
+          allMessages = d.messages.map((m) => ({ ...m, read: !!m.read }));
+          renderMessages();
+        }
+        else if (d.type === "message") { receiveMessage(d); }
+        else if (d.type === "typing") { showTyping(d.from); }
+        else if (d.type === "read") { markSentAsRead(d.by); }
+        else if (d.type === "groups") { groups = d.groups; renderGroups(); }
+        else if (d.type === "group_history") { groupMessages = d.messages; renderMessages(); }
+        else if (d.type === "group") { addGroup(d.group); }
+        else if (d.type === "group_message") { receiveGroupMessage(d); }
+        else if (d.type === "group_typing") { showGroupTyping(d); }
+        else if (d.type === "error") { alert(d.error); }
+      };
+      ws.onerror = () => {
+        $("status").textContent = "Cannot connect to the chat server. Is node server.js running?";
+      };
+      ws.onclose = (e) => {
+        if ($("chat").style.display !== "flex") {
+          if (e.code === 1008) {
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("username");
+            $("status").textContent = "Session expired. Please log in again.";
+          } else {
+            $("status").textContent = "Chat server closed the connection: " + (e.reason || "code " + e.code);
+          }
+        } else {
+          $("hSub").textContent = "Disconnected. Refresh the page and log in again.";
+        }
+      };
+    }
+
+    function otherPerson(m) {
+      return m.from === myName ? m.to : m.from;
+    }
+
+    function fmtTime(s) {
+      if (!s) return "";
+      const d = new Date(s.replace(" ", "T") + "Z");
+      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    // ---------- private messages ----------
+    function receiveMessage(m) {
+      allMessages.push({ ...m, read: false });
+      if (m.from !== myName) typing[m.from] = false;
+      if (otherPerson(m) === current) {
+        markRead();
+        renderMessages();
+        updateHeader();
+      } else if (m.from !== myName) {
+        unread[m.from] = (unread[m.from] || 0) + 1;
+        renderUsers();
+      }
+    }
+
+    function markRead() {
+      if (!current || !ws || ws.readyState !== 1) return;
+      const hasNew = allMessages.some((m) => m.from === current && m.to === myName && !m.read);
+      if (!hasNew) return;
+      allMessages.forEach((m) => {
+        if (m.from === current && m.to === myName) m.read = true;
+      });
+      ws.send(JSON.stringify({ type: "read", from: current }));
+    }
+
+    function markSentAsRead(by) {
+      allMessages.forEach((m) => {
+        if (m.from === myName && m.to === by) m.read = true;
+      });
+      if (current === by) renderMessages();
+    }
+
+    function showTyping(from) {
+      typing[from] = true;
+      clearTimeout(typingTimers[from]);
+      typingTimers[from] = setTimeout(() => {
+        typing[from] = false;
+        updateHeader();
+      }, 2500);
+      updateHeader();
+    }
+
+    // ---------- group messages ----------
+    function addGroup(g) {
+      if (!groups.find((x) => x.id === g.id)) groups.push(g);
+      renderGroups();
+      if (g.creator === myName) {
+        closeModal();
+        selectGroup(g.id);
+      }
+    }
+
+    function receiveGroupMessage(m) {
+      groupMessages.push(m);
+      if (m.from !== myName) groupTyping[m.group] = null;
+      if (currentGroup === m.group) {
+        renderMessages();
+        updateHeader();
+      } else if (m.from !== myName) {
+        unreadGroup[m.group] = (unreadGroup[m.group] || 0) + 1;
+        renderGroups();
+      }
+    }
+
+    function showGroupTyping(d) {
+      groupTyping[d.group] = d.from;
+      clearTimeout(groupTypingTimers[d.group]);
+      groupTypingTimers[d.group] = setTimeout(() => {
+        groupTyping[d.group] = null;
+        updateHeader();
+      }, 2500);
+      updateHeader();
+    }
+
+    // ---------- header ----------
+    function updateHeader() {
+      let title, sub, isOnline = false;
+      if (currentGroup !== null) {
+        const g = groups.find((x) => x.id === currentGroup);
+        if (!g) return;
+        title = g.name;
+        sub = groupTyping[currentGroup] ? groupTyping[currentGroup] + " is typing..." : g.members.length + " members";
+      } else if (current) {
+        const u = users.find((x) => x.username === current);
+        isOnline = !!(u && u.online);
+        title = current;
+        sub = typing[current] ? "typing..." : (isOnline ? "online" : "offline");
+      } else {
+        return;
+      }
+      $("hTitle").textContent = title;
+      $("hSub").textContent = sub;
+      $("hAv").replaceChildren(avatar(title, true, isOnline));
+    }
+
+    function updatePresence(p) {
+      if (p.username === myName) return;
+      const u = users.find((x) => x.username === p.username);
+      if (u) u.online = p.online;
+      else users.push({ username: p.username, online: p.online });
+      renderUsers();
+      updateHeader();
+    }
+
+    // ---------- sidebar ----------
+    function makeRow(name, active, isOnline, count, onclick) {
+      const row = document.createElement("div");
+      row.className = "row" + (active ? " active" : "");
+      const label = document.createElement("span");
+      label.className = "name";
+      label.textContent = name;
+      row.append(avatar(name, false, isOnline), label);
+      if (count) {
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = count;
+        row.append(badge);
+      }
+      row.onclick = onclick;
+      return row;
+    }
+
+    function emptyNote(text) {
+      const d = document.createElement("div");
+      d.className = "empty";
+      d.textContent = text;
+      return d;
+    }
+
+    function renderUsers() {
+      const list = $("users");
+      list.innerHTML = "";
+      if (!users.length) { list.appendChild(emptyNote("No other users yet")); return; }
+      [...users]
+        .sort((a, b) => (b.online - a.online) || a.username.localeCompare(b.username))
+        .forEach((u) => {
+          list.appendChild(makeRow(u.username, currentGroup === null && u.username === current,
+            u.online, unread[u.username], () => selectUser(u.username)));
+        });
+    }
+
+    function renderGroups() {
+      const list = $("groups");
+      list.innerHTML = "";
+      if (!groups.length) { list.appendChild(emptyNote("No groups yet. Tap + to create one.")); return; }
+      groups.forEach((g) => {
+        list.appendChild(makeRow(g.name, g.id === currentGroup, false,
+          unreadGroup[g.id], () => selectGroup(g.id)));
+      });
+    }
+
+    function openChat() {
+      $("chat").classList.add("open");
+      updateHeader();
+      renderUsers();
+      renderGroups();
+      renderMessages();
+      $("text").focus();
+    }
+
+    function goBack() {
+      $("chat").classList.remove("open");
+    }
+
+    function selectUser(name) {
+      current = name;
+      currentGroup = null;
+      unread[name] = 0;
+      markRead();
+      openChat();
+    }
+
+    function selectGroup(id) {
+      currentGroup = id;
+      current = null;
+      unreadGroup[id] = 0;
+      openChat();
+    }
+
+    // ---------- messages on screen ----------
+    function buildBubble(m, box, isGroup) {
+      const mine = m.from === myName;
+      const div = document.createElement("div");
+      div.className = "msg" + (mine ? " me" : "");
+
+      if (isGroup && !mine) {
+        const sender = document.createElement("div");
+        sender.className = "sender";
+        sender.textContent = m.from;
+        sender.style.color = "hsl(" + hue(m.from) + " 60% 55%)";
+        div.append(sender);
+      }
+
+      if (m.file) {
+        // Files are only served to logged-in members of the chat, so the link carries the login token
+        const fileUrl = API + m.file.url + "?token=" + encodeURIComponent(authToken);
+        if (m.file.isImage) {
+          const img = document.createElement("img");
+          img.src = fileUrl;
+          img.alt = m.file.name;
+          img.onload = () => { box.scrollTop = box.scrollHeight; };
+          img.onclick = () => window.open(fileUrl, "_blank");
+          div.append(img);
+        } else if (m.file.isVideo) {
+          const video = document.createElement("video");
+          video.src = fileUrl;
+          video.controls = true;
+          video.preload = "metadata";
+          video.onloadedmetadata = () => { box.scrollTop = box.scrollHeight; };
+          div.append(video);
+        } else {
+          const link = document.createElement("a");
+          link.className = "file";
+          link.href = fileUrl;
+          link.download = m.file.name;
+          link.textContent = "\uD83D\uDCC4 " + m.file.name;
+          div.append(link);
+        }
+      }
+
+      if (m.text) {
+        const text = document.createElement("div");
+        text.textContent = m.text;
+        div.append(text);
+      }
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = fmtTime(m.created_at);
+
+      if (mine && !isGroup) {
+        const ticks = document.createElement("span");
+        ticks.className = "ticks" + (m.read ? " read" : "");
+        ticks.textContent = " " + (m.read ? "\u2713\u2713" : "\u2713");
+        meta.append(ticks);
+      }
+
+      div.append(meta);
+      return div;
+    }
+
+    function renderMessages() {
+      const box = $("messages");
+      box.innerHTML = "";
+      let list;
+      let isGroup = false;
+      if (currentGroup !== null) {
+        list = groupMessages.filter((m) => m.group === currentGroup);
+        isGroup = true;
+      } else if (current) {
+        list = allMessages.filter((m) => otherPerson(m) === current);
+      } else {
+        const hint = document.createElement("div");
+        hint.className = "hint";
+        hint.textContent = "Pick a contact or group to start chatting";
+        box.appendChild(hint);
+        return;
+      }
+      if (!list.length) {
+        const hint = document.createElement("div");
+        hint.className = "hint";
+        hint.textContent = "No messages yet. Say hello!";
+        box.appendChild(hint);
+        return;
+      }
+      list.forEach((m) => box.appendChild(buildBubble(m, box, isGroup)));
+      box.scrollTop = box.scrollHeight;
+    }
+
+    // ---------- sending ----------
+    function currentTarget() {
+      if (currentGroup !== null) return { group: currentGroup };
+      if (current) return { to: current };
+      return null;
+    }
+
+    function sendMessage() {
+      const text = $("text").value.trim();
+      const target = currentTarget();
+      if (!target) { alert("Select a contact or group first"); return; }
+      if (!text) return;
+      ws.send(JSON.stringify({ ...target, text }));
+      $("text").value = "";
+    }
+
+    $("file").addEventListener("change", async () => {
+      const f = $("file").files[0];
+      $("file").value = "";
+      if (!f) return;
+      const target = currentTarget();
+      if (!target) { alert("Select a contact or group first"); return; }
+      if (f.size > 20 * 1024 * 1024) { alert("File too large (max 20 MB)"); return; }
+
+      const oldPlaceholder = $("text").placeholder;
+      $("text").placeholder = "Uploading " + f.name + "...";
+      try {
+        const res = await fetch(API + "/upload?name=" + encodeURIComponent(f.name), {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + authToken,
+            "Content-Type": "application/octet-stream"
+          },
+          body: f
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || "Upload failed"); return; }
+        ws.send(JSON.stringify({ ...target, text: $("text").value.trim(), file: data }));
+        $("text").value = "";
+      } catch (err) {
+        alert("Upload failed: " + err.message);
+      } finally {
+        $("text").placeholder = oldPlaceholder;
+      }
+    });
+
+    // ---------- new group dialog ----------
+    function openModal() {
+      const list = $("memberList");
+      list.innerHTML = "";
+      if (!users.length) list.appendChild(emptyNote("No other users yet. Create more accounts first."));
+      users.forEach((u) => {
+        const label = document.createElement("label");
+        const box = document.createElement("input");
+        box.type = "checkbox";
+        box.value = u.username;
+        label.append(box, avatar(u.username, true, false), document.createTextNode(u.username));
+        list.appendChild(label);
+      });
+      $("groupName").value = "";
+      $("modal").style.display = "flex";
+      $("groupName").focus();
+    }
+
+    function closeModal() {
+      $("modal").style.display = "none";
+    }
+
+    function createGroup() {
+      const name = $("groupName").value.trim();
+      const members = [...document.querySelectorAll("#memberList input:checked")].map((i) => i.value);
+      if (!name) { alert("Enter a group name"); return; }
+      if (!members.length) { alert("Pick at least one member"); return; }
+      ws.send(JSON.stringify({ type: "create_group", name, members }));
+    }
+
+    // ---------- misc ----------
+    function logout() {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("username");
+      location.reload();
+    }
+
+    $("text").addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(); });
+    $("password").addEventListener("keydown", (e) => { if (e.key === "Enter") auth(mode); });
+
+    $("text").addEventListener("input", () => {
+      if (!ws || ws.readyState !== 1) return;
+      const now = Date.now();
+      if (now - lastTypingSent <= 2000) return;
+      if (currentGroup !== null) {
+        lastTypingSent = now;
+        ws.send(JSON.stringify({ type: "group_typing", group: currentGroup }));
+      } else if (current) {
+        lastTypingSent = now;
+        ws.send(JSON.stringify({ type: "typing", to: current }));
+      }
+    });
+
+    const savedToken = sessionStorage.getItem("token");
+    const savedName = sessionStorage.getItem("username");
+    if (savedToken && savedName) {
+      myName = savedName;
+      connect(savedToken);
+    }
+  </script>
+</body>
+</html>
